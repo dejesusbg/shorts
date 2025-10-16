@@ -1,0 +1,9 @@
+google-genai==1.45.0
+pillow==9.5.0
+numpy==1.26.2
+moviepy==1.0.3
+pydub==0.25.1
+gtts==2.5.0
+requests==2.31.0
+imageio==2.33.1
+imageio-ffmpeg==0.4.9

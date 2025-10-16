@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  video-generator:
+    build: .
+    image: gemini-video-generator:latest
+    container_name: video-gen
+    environment:
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+    volumes:
+      - ./input:/app/input
+      - ./output:/app/output
+      - ./temp:/app/temp
+    command: /app/input/example_input.json my_video
+    restart: 'no'
+
+  # Interactive mode for development
+  video-generator-dev:
+    build: .
+    image: gemini-video-generator:latest
+    container_name: video-gen-dev
+    environment:
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+    volumes:
+      - ./input:/app/input
+      - ./output:/app/output
+      - ./temp:/app/temp
+      - ./video_generator.py:/app/video_generator.py
+    stdin_open: true
+    tty: true
+    command: /bin/bash
+    profiles: ['dev']
