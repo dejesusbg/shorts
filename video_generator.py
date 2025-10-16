@@ -137,7 +137,7 @@ Return ONLY the enhanced script with pause markers, no explanations."""
 
         try:
             response = self.client.models.generate_content(
-                model="gemini-2.5-flash", contents=[prompt]
+                model="gemini-2.0-flash", contents=[prompt]
             )
             enhanced = response.text.strip()
             print("  ✓ Script enhanced")
@@ -201,7 +201,7 @@ Return ONLY the optimized prompt, no explanations."""
 
         try:
             response = self.client.models.generate_content(
-                model="gemini-2.5-flash", contents=[optimization_prompt]
+                model="gemini-2.0-flash", contents=[optimization_prompt]
             )
             optimized = response.text.strip()
             # Ensure vertical format
@@ -223,8 +223,11 @@ Return ONLY the optimized prompt, no explanations."""
 
         try:
             response = self.client.models.generate_content(
-                model="gemini-2.0-flash-image",
+                model="gemini-2.0-flash-preview-image-generation",
                 contents=[optimized_prompt],
+                config=types.GenerateContentConfig(
+                    response_modalities=["TEXT", "IMAGE"]
+                ),
             )
 
             image_parts = [
@@ -235,8 +238,8 @@ Return ONLY the optimized prompt, no explanations."""
 
             if image_parts:
                 image = Image.open(BytesIO(image_parts[0]))
-                img = img.resize((1080, 1920))
-                image.save("photorealistic_example.png")
+                image = image.resize((1080, 1920))
+                image.save(image_path, quality=100)
                 print("  ✓ Generated successfully")
                 return str(image_path)
 
@@ -265,7 +268,7 @@ Return as JSON only:
 
         try:
             response = self.client.models.generate_content(
-                model="gemini-2.5-flash", contents=[analysis_prompt]
+                model="gemini-2.0-flash", contents=[analysis_prompt]
             )
             analysis = json.loads(
                 response.text.strip().replace("```json", "").replace("```", "")
@@ -406,7 +409,7 @@ Return ONLY valid JSON, no explanations."""
 
         try:
             response = self.client.models.generate_content(
-                model="gemini-2.5-flash", contents=[prompt]
+                model="gemini-2.0-flash", contents=[prompt]
             )
             params = json.loads(
                 response.text.strip().replace("```json", "").replace("```", "")
