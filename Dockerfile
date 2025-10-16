@@ -8,12 +8,30 @@ RUN apt-get update && apt-get install -y \
     libxrender-dev \
     libgomp1 \
     fonts-dejavu-core \
-    # 🆕 CRITICAL FIX: Install ImageMagick 🆕
     imagemagick \
+    ghostscript \  
+    gcc \ 
     && rm -rf /var/lib/apt/lists/*
 
-# 🆕 CRITICAL FIX: Tell MoviePy the path to the 'convert' binary 🆕
-ENV IMAGEMAGICK_BINARY /usr/bin/convert
+# Fix ImageMagick security policy during build to prevent @* security errors in MoviePy
+RUN policy_file=$(find /etc/ImageMagick* -name policy.xml | head -n 1) && \
+    if [ -n "$policy_file" ]; then \
+        sed -i 's/<policy domain="path" rights="none" pattern="@\*"/<policy domain="path" rights="read|write" pattern="@\*"/g' $policy_file && \
+        echo '<policy domain="coder" rights="read|write" pattern="PDF" />' >> $policy_file && \
+        echo '<policy domain="coder" rights="read|write" pattern="EPT" />' >> $policy_file && \
+        echo '<policy domain="coder" rights="read|write" pattern="URL" />' >> $policy_file && \
+        echo '<policy domain="coder" rights="read|write" pattern="HTTPS" />' >> $policy_file && \
+        echo '<policy domain="coder" rights="read|write" pattern="MVG" />' >> $policy_file && \
+        echo '<policy domain="coder" rights="read|write" pattern="MSL" />' >> $policy_file && \
+        echo '<policy domain="coder" rights="read|write" pattern="TEXT" />' >> $policy_file && \
+        echo '<policy domain="coder" rights="read|write" pattern="LABEL" />' >> $policy_file && \
+        echo '<policy domain="path" rights="read|write" pattern="@*" />' >> $policy_file; \
+    else \
+        echo "Warning: ImageMagick policy.xml not found"; \
+    fi && \
+    chmod 777 /tmp  # Ensure temp dir writable for MoviePy
+
+ENV IMAGEMAGICK_BINARY=/usr/bin/convert
 
 # Set working directory
 WORKDIR /app
@@ -33,7 +51,7 @@ RUN mkdir -p /app/output /app/temp /app/input
 # Set environment variables
 ENV PYTHONUNBUFFERED=1
 
-# Volume mounts for input/output
+# Volume mounts for input/output (declared for docs; actual mount at runtime)
 VOLUME ["/app/input", "/app/output"]
 
 # Default command
