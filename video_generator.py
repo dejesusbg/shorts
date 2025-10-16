@@ -1,19 +1,25 @@
 """
 Automated Video Generator - 100% Gemini AI + Docker Ready
 Everything powered by Gemini API: images, voice optimization, music cues, and more
+
+Requirements in requirements.txt
+Docker setup in Dockerfile
 """
 
 import json
 import re
 import os
+import shutil
 from pathlib import Path
 from typing import List, Dict, Tuple
 from datetime import datetime
 import time
+import base64
 from io import BytesIO
 from PIL import Image
 
-import google as genai
+from google import genai
+from google.genai import types
 from PIL import Image, ImageDraw, ImageFont, ImageFilter, ImageEnhance
 import numpy as np
 from moviepy.editor import (
@@ -29,13 +35,18 @@ from gtts import gTTS
 
 
 class GeminiVideoGenerator:
-    def __init__(self, output_dir="output", temp_dir="temp"):
+    def __init__(self, output_dir="output", temp_dir="temp", api_key=None):
         self.output_dir = Path(output_dir)
         self.temp_dir = Path(temp_dir)
         self.output_dir.mkdir(exist_ok=True)
         self.temp_dir.mkdir(exist_ok=True)
 
-        self.client = genai.Client()
+        self.api_key = api_key or os.environ.get("GEMINI_API_KEY")
+        if not self.api_key:
+            raise ValueError("GEMINI_API_KEY not set")
+
+        self.client = genai.Client(api_key=self.api_key)
+
         print("✓ Gemini API configured")
 
     def parse_srt_timing(self, timing_str: str) -> Tuple[float, float]:
@@ -126,7 +137,7 @@ Return ONLY the enhanced script with pause markers, no explanations."""
 
         try:
             response = self.client.models.generate_content(
-                model="gemini-2.5-flash", contents=prompt
+                model="gemini-2.5-flash", contents=[prompt]
             )
             enhanced = response.text.strip()
             print("  ✓ Script enhanced")
@@ -190,7 +201,7 @@ Return ONLY the optimized prompt, no explanations."""
 
         try:
             response = self.client.models.generate_content(
-                model="gemini-2.5-flash", contents=optimization_prompt
+                model="gemini-2.5-flash", contents=[optimization_prompt]
             )
             optimized = response.text.strip()
             # Ensure vertical format
@@ -212,8 +223,8 @@ Return ONLY the optimized prompt, no explanations."""
 
         try:
             response = self.client.models.generate_content(
-                model="gemini-2.5-flash-image",
-                contents=optimized_prompt,
+                model="gemini-2.0-flash-image",
+                contents=[optimized_prompt],
             )
 
             image_parts = [
@@ -254,7 +265,7 @@ Return as JSON only:
 
         try:
             response = self.client.models.generate_content(
-                model="gemini-2.5-flash", contents=analysis_prompt
+                model="gemini-2.5-flash", contents=[analysis_prompt]
             )
             analysis = json.loads(
                 response.text.strip().replace("```json", "").replace("```", "")
@@ -395,7 +406,7 @@ Return ONLY valid JSON, no explanations."""
 
         try:
             response = self.client.models.generate_content(
-                model="gemini-2.5-flash", contents=prompt
+                model="gemini-2.5-flash", contents=[prompt]
             )
             params = json.loads(
                 response.text.strip().replace("```json", "").replace("```", "")
